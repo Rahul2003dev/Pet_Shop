@@ -7,6 +7,7 @@ import org.example.petshopcg.repository.PetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/pets")
+@RequestMapping("/api/v1")
 public class PetController {
 
     @Autowired
@@ -24,6 +25,7 @@ public class PetController {
     @Autowired
     private PetMapper petMapper;
 
+    // Inline error response builder
     private Map<String, Object> errorResponse(String message) {
         Map<String, Object> error = new HashMap<>();
         error.put("timeStamp", LocalDate.now());
@@ -31,7 +33,7 @@ public class PetController {
         return error;
     }
 
-    @GetMapping
+    @GetMapping("/pets")
     public ResponseEntity<?> getAllPets() {
         try {
             List<PetDto> pets = petRepository.findAll()
@@ -44,7 +46,7 @@ public class PetController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/pets/{id}")
     public ResponseEntity<?> getPetById(@PathVariable Integer id) {
         try {
             Optional<Pet> petOpt = petRepository.findById(id);
@@ -72,12 +74,15 @@ public class PetController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePet(@PathVariable Integer id, @RequestBody PetDto petDto) {
         try {
-            return petRepository.findById(id).map(existingPet -> {
+            Optional<Pet> existingPetOpt = petRepository.findById(id);
+            if (existingPetOpt.isPresent()) {
                 Pet updatedPet = petMapper.toEntity(petDto);
                 updatedPet.setId(id);
                 Pet saved = petRepository.save(updatedPet);
                 return ResponseEntity.ok(petMapper.toDto(saved));
-            }).orElseGet(() -> ResponseEntity.badRequest().body(errorResponse("Validation failed")));
+            } else {
+                return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
+            }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
         }
