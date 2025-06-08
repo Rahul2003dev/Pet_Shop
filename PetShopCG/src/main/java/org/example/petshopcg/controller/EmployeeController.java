@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -21,58 +22,130 @@ public class EmployeeController {
     @Autowired
     private EmployeeMapper employeeMapper;
 
-    // Fetches all employees from the database
+    // Utility method for error response
+    private Map<String, Object> errorResponse(String message) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDate.now());
+        error.put("message", message);
+        return error;
+    }
+
+    // Get all employees
     @GetMapping
-    public List<EmployeeDto> getAllEmployees() {
-        return employeeRepo.findAll()
-                .stream()
-                .map(employeeMapper::toDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getAllEmployees() {
+        try {
+            List<EmployeeDto> list = employeeRepo.findAll()
+                    .stream()
+                    .map(employeeMapper::toDto)
+                    .collect(Collectors.toList());
+
+            // Return 404 if no employees found
+            if (list.isEmpty()) {
+                return ResponseEntity.status(404).body(errorResponse("No employees found."));
+            }
+
+            // Return the list of employees with 200 OK
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Failed to fetch employees."));
+        }
     }
 
-    // Returns a single employee based on their unique ID
+    // Get employee by ID
     @GetMapping("/{employee_id}")
-    public ResponseEntity<EmployeeDto> getEmployeeById(@PathVariable("employee_id") Integer id) {
-        return employeeRepo.findById(id)
-                .map(employeeMapper::toDto)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> getEmployeeById(@PathVariable("employee_id") Integer id) {
+        try {
+            Optional<Employee> employeeOpt = employeeRepo.findById(id);
+
+            if (employeeOpt.isPresent()) {
+                EmployeeDto dto = employeeMapper.toDto(employeeOpt.get());
+                return ResponseEntity.ok(dto);
+            } else {
+                // Return 404 if employee with given ID does not exist
+                return ResponseEntity.status(404).body(errorResponse("Employee not found with ID: " + id));
+            }
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Error fetching employee by ID."));
+        }
     }
 
-    // Searches employees by first name (case-insensitive)
+    // Search employees by first name (exact match, case-insensitive)
     @GetMapping("/name/{name}")
-    public List<EmployeeDto> getEmployeesByName(@PathVariable String name) {
-        return employeeRepo.findByFirstNameContainingIgnoreCase(name)
-                .stream()
-                .map(employeeMapper::toDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getEmployeesByName(@PathVariable String name) {
+        try {
+            List<EmployeeDto> list = employeeRepo.findByFirstNameIgnoreCase(name)
+                    .stream()
+                    .map(employeeMapper::toDto)
+                    .collect(Collectors.toList());
+
+            // Return 404 if no employees match the search criteria
+            if (list.isEmpty()) {
+                return ResponseEntity.status(404).body(errorResponse("No employees found with name: " + name));
+            }
+
+            // Return matched employees
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Error searching employees by name."));
+        }
     }
 
-    // Filters employees by their position title (case-insensitive)
+    // Filter employees by position (case-insensitive substring match)
     @GetMapping("/position/{position_name}")
-    public List<EmployeeDto> getEmployeesByPosition(@PathVariable("position_name") String position) {
-        return employeeRepo.findByPositionContainingIgnoreCase(position)
-                .stream()
-                .map(employeeMapper::toDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getEmployeesByPosition(@PathVariable("position_name") String position) {
+        try {
+            List<EmployeeDto> list = employeeRepo.findByPositionContainingIgnoreCase(position)
+                    .stream()
+                    .map(employeeMapper::toDto)
+                    .collect(Collectors.toList());
+
+            // Return 404 if no employees found for the given position
+            if (list.isEmpty()) {
+                return ResponseEntity.status(404).body(errorResponse("No employees found with position: " + position));
+            }
+
+            // Return matched employees
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Error filtering employees by position."));
+        }
     }
 
-    // Adds a new employee to the system
+    // Add new employee
     @PostMapping("/add")
-    public EmployeeDto addEmployee(@RequestBody EmployeeDto dto) {
-        Employee saved = employeeRepo.save(employeeMapper.toEntity(dto));
-        return employeeMapper.toDto(saved);
+    public ResponseEntity<?> addEmployee(@RequestBody EmployeeDto dto) {
+        try {
+            Employee saved = employeeRepo.save(employeeMapper.toEntity(dto));
+            return ResponseEntity.ok(employeeMapper.toDto(saved));
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on failure
+            return ResponseEntity.internalServerError().body(errorResponse("Error adding employee."));
+        }
     }
 
-    // Updates an existing employee's data by their ID
+    // Update existing employee
     @PutMapping("/update/{employee_id}")
-    public ResponseEntity<EmployeeDto> updateEmployee(@PathVariable("employee_id") Integer id,
-                                                      @RequestBody EmployeeDto dto) {
-        return employeeRepo.findById(id).map(existing -> {
-            // Copy values from the DTO to a new entity instance
+    public ResponseEntity<?> updateEmployee(@PathVariable("employee_id") Integer id,
+                                            @RequestBody EmployeeDto dto) {
+        try {
+            Optional<Employee> existingOpt = employeeRepo.findById(id);
+            if (existingOpt.isEmpty()) {
+                // Return 404 if employee to update does not exist
+                return ResponseEntity.status(404).body(errorResponse("Employee not found with ID: " + id));
+            }
+
             Employee employee = employeeMapper.toEntity(dto);
-            employee.setId(id); // Maintain original ID to avoid creating a new record
-            return ResponseEntity.ok(employeeMapper.toDto(employeeRepo.save(employee)));
-        }).orElse(ResponseEntity.notFound().build());
+            employee.setId(id);  // Preserve the original ID
+            Employee updated = employeeRepo.save(employee);
+
+            return ResponseEntity.ok(employeeMapper.toDto(updated));
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on failure
+            return ResponseEntity.internalServerError().body(errorResponse("Error updating employee."));
+        }
     }
 }
