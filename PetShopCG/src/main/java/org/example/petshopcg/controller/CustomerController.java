@@ -52,11 +52,4 @@ public class CustomerController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> deleteCustomer(@PathVariable Integer id) {
-//        return customerRepo.findById(id).map(existing -> {
-//            customerRepo.deleteById(id);
-//            return ResponseEntity.noContent().build();
-//        }).orElse(ResponseEntity.notFound().build());
-//    }
 }
