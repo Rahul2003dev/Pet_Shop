@@ -9,9 +9,9 @@ import java.util.List;
 @Repository
 public interface VaccinationRepository extends JpaRepository<Vaccination, Integer> {
 
-    // Returns all vaccinations that are marked as available (true)
+    // Find all vaccinations where available is true
     List<Vaccination> findByAvailableTrue();
 
-    // Returns all vaccinations that are marked as unavailable (false)
+    // Find all vaccinations where available is false
     List<Vaccination> findByAvailableFalse();
 }
