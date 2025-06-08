@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -21,59 +22,131 @@ public class VaccinationController {
     @Autowired
     private VaccinationMapper vaccinationMapper;
 
-    // Get all vaccination records
+    // Utility method for error response
+    private Map<String, Object> errorResponse(String message) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDate.now());
+        error.put("message", message);
+        return error;
+    }
+
+    // Get all vaccinations
     @GetMapping
-    public List<VaccinationDto> getAllVaccinations() {
-        return vaccinationRepository.findAll()
-                .stream()
-                .map(vaccinationMapper::toDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getAllVaccinations() {
+        try {
+            List<VaccinationDto> list = vaccinationRepository.findAll()
+                    .stream()
+                    .map(vaccinationMapper::toDto)
+                    .collect(Collectors.toList());
+
+            // Return 404 if no vaccinations found
+            if (list.isEmpty()) {
+                return ResponseEntity.status(404).body(errorResponse("No vaccinations found."));
+            }
+
+            // Return the list of vaccinations with 200 OK
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Failed to fetch vaccinations."));
+        }
     }
 
-    // Get a specific vaccination by its ID
+    // Get vaccination by ID
     @GetMapping("/{vaccination_id}")
-    public ResponseEntity<VaccinationDto> getVaccinationById(@PathVariable("vaccination_id") Integer id) {
-        return vaccinationRepository.findById(id)
-                .map(vaccinationMapper::toDto)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> getVaccinationById(@PathVariable("vaccination_id") Integer id) {
+        try {
+            Optional<Vaccination> vaccinationOpt = vaccinationRepository.findById(id);
+
+            if (vaccinationOpt.isPresent()) {
+                VaccinationDto dto = vaccinationMapper.toDto(vaccinationOpt.get());
+                return ResponseEntity.ok(dto);
+            } else {
+                // Return 404 if vaccination with given ID does not exist
+                return ResponseEntity.status(404).body(errorResponse("Vaccination not found with ID: " + id));
+            }
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Error fetching vaccination by ID."));
+        }
     }
 
-    // Get only available vaccinations (where available = true)
+    // Get available vaccinations
     @GetMapping("/available")
-    public List<VaccinationDto> getAvailableVaccinations() {
-        return vaccinationRepository.findByAvailableTrue()
-                .stream()
-                .map(vaccinationMapper::toDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getAvailableVaccinations() {
+        try {
+            List<VaccinationDto> list = vaccinationRepository.findByAvailableTrue()
+                    .stream()
+                    .map(vaccinationMapper::toDto)
+                    .collect(Collectors.toList());
+
+            // Return 404 if no available vaccinations found
+            if (list.isEmpty()) {
+                return ResponseEntity.status(404).body(errorResponse("No available vaccinations found."));
+            }
+
+            // Return available vaccinations with 200 OK
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Failed to fetch available vaccinations."));
+        }
     }
 
-    // Get vaccinations that are currently not available
+    // Get unavailable vaccinations
     @GetMapping("/unavailable")
-    public List<VaccinationDto> getUnavailableVaccinations() {
-        return vaccinationRepository.findByAvailableFalse()
-                .stream()
-                .map(vaccinationMapper::toDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getUnavailableVaccinations() {
+        try {
+            List<VaccinationDto> list = vaccinationRepository.findByAvailableFalse()
+                    .stream()
+                    .map(vaccinationMapper::toDto)
+                    .collect(Collectors.toList());
+
+            // Return 404 if no unavailable vaccinations found
+            if (list.isEmpty()) {
+                return ResponseEntity.status(404).body(errorResponse("No unavailable vaccinations found."));
+            }
+
+            // Return unavailable vaccinations with 200 OK
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on exception
+            return ResponseEntity.internalServerError().body(errorResponse("Failed to fetch unavailable vaccinations."));
+        }
     }
 
-    // Add a new vaccination record
+    // Add new vaccination
     @PostMapping("/add")
-    public VaccinationDto addVaccination(@RequestBody VaccinationDto dto) {
-        Vaccination saved = vaccinationRepository.save(vaccinationMapper.toEntity(dto));
-        return vaccinationMapper.toDto(saved);
+    public ResponseEntity<?> addVaccination(@RequestBody VaccinationDto dto) {
+        try {
+            Vaccination saved = vaccinationRepository.save(vaccinationMapper.toEntity(dto));
+            return ResponseEntity.ok(vaccinationMapper.toDto(saved));
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on failure
+            return ResponseEntity.internalServerError().body(errorResponse("Error adding vaccination."));
+        }
     }
 
-    // Update an existing vaccination using its ID
+    // Update existing vaccination
     @PutMapping("/update/{vaccination_id}")
-    public ResponseEntity<VaccinationDto> updateVaccination(@PathVariable("vaccination_id") Integer id,
-                                                            @RequestBody VaccinationDto dto) {
-        return vaccinationRepository.findById(id).map(existing -> {
-            // Convert DTO to entity and make sure the ID stays the same
+    public ResponseEntity<?> updateVaccination(@PathVariable("vaccination_id") Integer id,
+                                               @RequestBody VaccinationDto dto) {
+        try {
+            Optional<Vaccination> existingOpt = vaccinationRepository.findById(id);
+            if (existingOpt.isEmpty()) {
+                // Return 404 if vaccination to update does not exist
+                return ResponseEntity.status(404).body(errorResponse("Vaccination not found with ID: " + id));
+            }
+
             Vaccination vaccination = vaccinationMapper.toEntity(dto);
-            vaccination.setId(id);
+            vaccination.setId(id);  // Preserve the original ID
             Vaccination updated = vaccinationRepository.save(vaccination);
+
+            // Return updated vaccination with 200 OK
             return ResponseEntity.ok(vaccinationMapper.toDto(updated));
-        }).orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            // Return 500 Internal Server Error on failure
+            return ResponseEntity.internalServerError().body(errorResponse("Error updating vaccination."));
+        }
     }
 }
