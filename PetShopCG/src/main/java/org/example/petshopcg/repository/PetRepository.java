@@ -4,8 +4,9 @@ import org.example.petshopcg.entity.Pet;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface PetRepository extends JpaRepository<Pet, Integer> {
-    // You can add custom query methods here if needed, e.g.:
-    // List<Pet> findByBreed(String breed);
+    List<Pet> findByCategory_NameIgnoreCase(String name);
 }
