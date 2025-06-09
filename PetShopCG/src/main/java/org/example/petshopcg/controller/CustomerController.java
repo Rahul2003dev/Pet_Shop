@@ -29,6 +29,14 @@ public class CustomerController {
                 .collect(Collectors.toList());
     }
 
+    @GetMapping("/by-first-name")
+    public List<CustomerDto> getByFirstName(@RequestParam String firstName) {
+        return customerRepo.findByFirstName(firstName)
+                .stream()
+                .map(customerMapper::toDto)
+                .toList();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CustomerDto> getCustomerById(@PathVariable Integer id) {
         return customerRepo.findById(id)
