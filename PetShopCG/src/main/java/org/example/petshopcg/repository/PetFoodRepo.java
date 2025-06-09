@@ -10,7 +10,8 @@ import java.util.List;
 public interface PetFoodRepo extends JpaRepository<PetFood, Integer> {
 
     // Search by name (partial match, case-insensitive)
-    List<PetFood> findByNameContainingIgnoreCase(String name);
+    List<PetFood> findByNameIgnoreCase(String name);
+
 
     // Filter by type (case-insensitive)
     List<PetFood> findByTypeIgnoreCase(String type);
