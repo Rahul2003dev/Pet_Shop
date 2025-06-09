@@ -1,7 +1,6 @@
 package org.example.petshopcg.controller;
 
 import org.example.petshopcg.dto.TransactionDto;
-import org.example.petshopcg.dto.TransactionHistoryResponse;
 import org.example.petshopcg.entity.Transaction;
 import org.example.petshopcg.mapper.TransactionMapper;
 import org.example.petshopcg.repository.TransactionRepo;
@@ -10,8 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -23,73 +21,99 @@ public class TransactionController {
 
     // GET /transactions → get all transactions
     @GetMapping
-    public ResponseEntity<TransactionHistoryResponse> getAllTransactions() {
+    public ResponseEntity<?> getAllTransactions() {
         List<TransactionDto> dtos = transactionRepo.findAll().stream()
                 .map(TransactionMapper::toDto)
                 .collect(Collectors.toList());
-
-        return ResponseEntity.ok(new TransactionHistoryResponse(LocalDate.now().toString(), dtos));
+        return ResponseEntity.ok(dtos);   // success → plain list
     }
 
     // GET /transactions/{transaction_id}
     @GetMapping("/{transaction_id}")
-    public ResponseEntity<TransactionHistoryResponse> getTransactionById(@PathVariable Integer transaction_id) {
+    public ResponseEntity<?> getTransactionById(@PathVariable Integer transaction_id) {
         Optional<Transaction> optional = transactionRepo.findById(transaction_id);
 
         if (optional.isPresent()) {
             TransactionDto dto = TransactionMapper.toDto(optional.get());
-            return ResponseEntity.ok(new TransactionHistoryResponse(LocalDate.now().toString(), dto));
+            return ResponseEntity.ok(dto);    // success → plain object
         } else {
-            return ResponseEntity.badRequest()
-                    .body(new TransactionHistoryResponse(LocalDate.now().toString(), "Validation failed"));
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("timestamp", LocalDate.now().toString());
+            errorResponse.put("message", "Validation failed");
+
+            return ResponseEntity.status(404).body(errorResponse);
         }
     }
 
     // GET /transactions/by_customer/{customer_id}
     @GetMapping("/by_customer/{customer_id}")
-    public ResponseEntity<TransactionHistoryResponse> getTransactionsByCustomerId(@PathVariable Integer customer_id) {
+    public ResponseEntity<?> getTransactionsByCustomerId(@PathVariable Integer customer_id) {
         List<TransactionDto> dtos = transactionRepo.findAll().stream()
                 .filter(t -> t.getCustomer() != null && t.getCustomer().getId().equals(customer_id))
                 .map(TransactionMapper::toDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new TransactionHistoryResponse(LocalDate.now().toString(), dtos));
+        return ResponseEntity.ok(dtos);   // success → plain list
     }
 
     // GET /transactions/successful
-    @GetMapping("/Success")
-    public ResponseEntity<TransactionHistoryResponse> getSuccessfulTransactions() {
+    @GetMapping("/successful")
+    public ResponseEntity<?> getSuccessfulTransactions() {
         List<TransactionDto> dtos = transactionRepo.findAll().stream()
                 .filter(t -> "SUCCESS".equalsIgnoreCase(t.getTransactionStatus()))
                 .map(TransactionMapper::toDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new TransactionHistoryResponse(LocalDate.now().toString(), dtos));
+        return ResponseEntity.ok(dtos);   // success → plain list
     }
 
     // GET /transactions/failed
-    @GetMapping("/Failed")
-    public ResponseEntity<TransactionHistoryResponse> getFailedTransactions() {
+    @GetMapping("/failed")
+    public ResponseEntity<?> getFailedTransactions() {
         List<TransactionDto> dtos = transactionRepo.findAll().stream()
                 .filter(t -> "FAILED".equalsIgnoreCase(t.getTransactionStatus()))
                 .map(TransactionMapper::toDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new TransactionHistoryResponse(LocalDate.now().toString(), dtos));
+        return ResponseEntity.ok(dtos);   // success → plain list
     }
 
     // POST /transactions/add
     @PostMapping("/add")
-    public ResponseEntity<TransactionHistoryResponse> addTransaction(@RequestBody TransactionDto transactionDto) {
+    public ResponseEntity<?> addTransaction(@RequestBody TransactionDto transactionDto) {
         try {
+            // Check if transaction_id already exists
+            boolean exists = transactionRepo.existsById(transactionDto.getId());
+
+            if (exists) {
+                // If already exists → return already exists message
+                Map<String, Object> existsResponse = new LinkedHashMap<>();
+                existsResponse.put("timeStamp", LocalDate.now().toString());
+                existsResponse.put("message", "Transaction already exists");
+
+                return ResponseEntity.badRequest().body(existsResponse);
+            }
+
+            // Else → add new transaction
             Transaction transaction = TransactionMapper.toEntity(transactionDto);
             Transaction savedTransaction = transactionRepo.save(transaction);
-            TransactionDto savedDto = TransactionMapper.toDto(savedTransaction);
 
-            return ResponseEntity.ok(new TransactionHistoryResponse(LocalDate.now().toString(), savedDto));
+
+            Map<String, Object> successResponse = new LinkedHashMap<>();
+            successResponse.put("timeStamp", LocalDate.now().toString());
+            successResponse.put("message", "Transaction added Successfully.");
+
+            return ResponseEntity.ok(successResponse);
+
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new TransactionHistoryResponse(LocalDate.now().toString(), "Validation failed"));
+            // Error case → validation failed
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("timeStamp", LocalDate.now().toString());
+            errorResponse.put("message", "Validation failed");
+
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+
 }
