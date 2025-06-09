@@ -22,7 +22,7 @@ public class AddressController {
     @Autowired
     private AddressMapper addressMapper;
 
-    // Inline response builder
+
     private Map<String, Object> responseMessage(String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("timeStamp", LocalDate.now());
@@ -30,7 +30,7 @@ public class AddressController {
         return response;
     }
 
-    // GET: /api/v1/address
+
     @GetMapping
     public ResponseEntity<?> getAllAddresses() {
         try {
@@ -44,7 +44,7 @@ public class AddressController {
         }
     }
 
-    // GET: /api/v1/address/{address_id}
+
     @GetMapping("/{address_id}")
     public ResponseEntity<?> getAddressById(@PathVariable("address_id") Integer id) {
         try {
@@ -59,7 +59,7 @@ public class AddressController {
         }
     }
 
-    // POST: /api/v1/address/add
+
     @PostMapping("/add")
     public ResponseEntity<?> createAddress(@RequestBody AddressDto addressDto) {
         try {
@@ -71,7 +71,7 @@ public class AddressController {
         }
     }
 
-    // PUT: /api/v1/address/update/{address_id}
+
     @PutMapping("/update/{address_id}")
     public ResponseEntity<?> updateAddress(@PathVariable("address_id") Integer id, @RequestBody AddressDto addressDto) {
         try {
