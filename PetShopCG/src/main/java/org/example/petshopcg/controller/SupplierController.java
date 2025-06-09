@@ -41,6 +41,7 @@ public class SupplierController {
         }
     }
 
+    // GET supplier by name
     @GetMapping("/name/{name}")
     public ResponseEntity<?> getSupplierByName(@PathVariable String name) {
         List<Supplier> suppliers = supplierRepo.findByNameIgnoreCase(name);
@@ -79,6 +80,28 @@ public class SupplierController {
         }
     }
 
+    // GET suppliers by city
+    @GetMapping("/city/{city_name}")
+    public ResponseEntity<?> getSuppliersByCity(@PathVariable("city_name") String city) {
+        List<Supplier> suppliers = supplierRepo.findByAddressCityIgnoreCase(city);
+        if (suppliers.isEmpty()) {
+            return validationFailedResponse();
+        }
+        List<SupplierDto> dtos = suppliers.stream().map(supplierMapper::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    // GET suppliers by state
+    @GetMapping("/state/{state_name}")
+    public ResponseEntity<?> getSuppliersByState(@PathVariable("state_name") String state) {
+        List<Supplier> suppliers = supplierRepo.findByAddressStateIgnoreCase(state);
+        if (suppliers.isEmpty()) {
+            return validationFailedResponse();
+        }
+        List<SupplierDto> dtos = suppliers.stream().map(supplierMapper::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
     // Helper method to build the response JSON
     private ResponseEntity<Map<String, Object>> buildResponse(String message, SupplierDto dto) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -95,7 +118,4 @@ public class SupplierController {
         error.put("message", "Validation failed");
         return ResponseEntity.badRequest().body(error);
     }
-
-
-
 }
