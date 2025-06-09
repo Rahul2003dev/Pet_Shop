@@ -1,115 +1,116 @@
 package org.example.petshopcg.controller;
 
+import jakarta.validation.Valid;
 import org.example.petshopcg.dto.PetCategoryDto;
-import org.example.petshopcg.entity.Pet;
 import org.example.petshopcg.entity.PetCategory;
 import org.example.petshopcg.mapper.PetCategoryMapper;
-import org.example.petshopcg.mapper.PetMapper;
 import org.example.petshopcg.repository.PetCategoryRepository;
-import org.example.petshopcg.repository.PetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.BindingResult;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @RestController
-@RequestMapping("/api/v1/pets/categories")
+@RequestMapping("/api/v1/categories")
 public class PetCategoryController {
 
     @Autowired
-    private PetCategoryRepository petCategoryRepository;
+    private PetCategoryRepository repository;
 
     @Autowired
-    private PetCategoryMapper petCategoryMapper;
+    private PetCategoryMapper PetCategoryMapper;
 
-    @Autowired
-    private PetRepository petRepository;
-
-    @Autowired
-    private PetMapper petMapper;
-
-    private Map<String, Object> errorResponse(String message) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timeStamp", LocalDate.now());
-        error.put("message", message);
-        return error;
-    }
-
+    // GET: All Categories
     @GetMapping
     public ResponseEntity<?> getAllCategories() {
-        try {
-            List<PetCategoryDto> categories = petCategoryRepository.findAll()
-                    .stream()
-                    .map(petCategoryMapper::toDto)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(categories);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
+        List<PetCategory> categories = repository.findAll();
+        List<PetCategoryDto> dtos = categories.stream()
+                .map(PetCategoryMapper::toDto)
+                .toList();
+
+        return ResponseEntity.ok(dtos);
+    }
+
+    // GET: Category by ID
+    @GetMapping("/{category_id}")
+    public ResponseEntity<?> getCategoryById(@PathVariable Integer category_id) {
+        Optional<PetCategory> optional = repository.findById(category_id);
+
+        if (optional.isPresent()) {
+            PetCategoryDto dto = PetCategoryMapper.toDto(optional.get());
+            return ResponseEntity.ok(dto);
+        } else {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "timeStamp", LocalDate.now().toString(),
+                    "message", "Category not found"
+            ));
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getCategoryById(@PathVariable Integer id) {
-        try {
-            Optional<PetCategory> catOpt = petCategoryRepository.findById(id);
-            if (catOpt.isPresent()) {
-                return ResponseEntity.ok(petCategoryMapper.toDto(catOpt.get()));
-            } else {
-                return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
+    // GET: Category by Name
+    @GetMapping("/name/{category_name}")
+    public ResponseEntity<?> getCategoryByName(@PathVariable String category_name) {
+        Optional<PetCategory> optional = repository.findByName(category_name);
+
+        if (optional.isPresent()) {
+            PetCategoryDto dto = PetCategoryMapper.toDto(optional.get());
+            return ResponseEntity.ok(dto);
+        } else {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "timeStamp", LocalDate.now().toString(),
+                    "message", "Category not found"
+            ));
         }
     }
 
-    @PostMapping
-    public ResponseEntity<?> createCategory(@RequestBody PetCategoryDto petCategoryDto) {
-        try {
-            PetCategory petCategory = petCategoryMapper.toEntity(petCategoryDto);
-            PetCategory saved = petCategoryRepository.save(petCategory);
-            return ResponseEntity.ok(petCategoryMapper.toDto(saved));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
+    // POST: Add Category
+    @PostMapping("/add")
+    public ResponseEntity<?> addCategory(@Valid @RequestBody PetCategoryDto dto, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "timeStamp", LocalDate.now().toString(),
+                    "message", "Validation failed"
+            ));
         }
+
+        PetCategory entity = PetCategoryMapper.toEntity(dto);
+        repository.save(entity);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "timeStamp", LocalDate.now().toString(),
+                "message", "Category added successfully"
+        ));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateCategory(@PathVariable Integer id, @RequestBody PetCategoryDto petCategoryDto) {
-        try {
-            Optional<PetCategory> existingOpt = petCategoryRepository.findById(id);
-            if (existingOpt.isPresent()) {
-                PetCategory updated = petCategoryMapper.toEntity(petCategoryDto);
-                updated.setId(id);
-                PetCategory saved = petCategoryRepository.save(updated);
-                return ResponseEntity.ok(petCategoryMapper.toDto(saved));
-            } else {
-                return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(errorResponse("Validation failed"));
+    // PUT: Update Category
+    @PutMapping("/update/{category_id}")
+    public ResponseEntity<?> updateCategory(@PathVariable Integer category_id, @Valid @RequestBody PetCategoryDto dto, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "timeStamp", LocalDate.now().toString(),
+                    "message", "Validation failed"
+            ));
         }
-    }
-    @GetMapping("/name/{categoryName}/pets")
-    public ResponseEntity<?> getPetsByCategoryName(@PathVariable String categoryName) {
-        try {
-            List<Pet> pets = petRepository.findByCategory_NameIgnoreCase(categoryName);
-            if (pets.isEmpty()) {
-                return ResponseEntity.badRequest().body(errorResponse("No pets found for category name: " + categoryName));
-            }
-            return ResponseEntity.ok(
-                    pets.stream()
-                            .map(petMapper::toDto)
-                            .collect(Collectors.toList())
-            );
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(errorResponse("Error retrieving pets by category name"));
-        }
-    }
 
+        Optional<PetCategory> optional = repository.findById(category_id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "timeStamp", LocalDate.now().toString(),
+                    "message", "Category not found"
+            ));
+        }
+
+        PetCategory category = optional.get();
+        category.setName(dto.getName());
+        repository.save(category);
+
+        return ResponseEntity.ok(Map.of(
+                "timeStamp", LocalDate.now().toString(),
+                "message", "Category updated successfully"
+        ));
+    }
 }

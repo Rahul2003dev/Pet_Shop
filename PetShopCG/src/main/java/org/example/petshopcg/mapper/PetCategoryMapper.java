@@ -7,10 +7,8 @@ import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
 public interface PetCategoryMapper {
-
     PetCategoryMapper INSTANCE = Mappers.getMapper(PetCategoryMapper.class);
 
-    PetCategoryDto toDto(PetCategory entity);
-
+    PetCategoryDto toDto(PetCategory category);
     PetCategory toEntity(PetCategoryDto dto);
 }
