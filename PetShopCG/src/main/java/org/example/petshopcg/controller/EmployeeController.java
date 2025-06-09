@@ -75,7 +75,7 @@ public class EmployeeController {
     @GetMapping("/name/{name}")
     public ResponseEntity<?> getEmployeesByName(@PathVariable String name) {
         try {
-            List<EmployeeDto> list = employeeRepo.findByFirstNameIgnoreCase(name)
+            List<EmployeeDto> list = employeeRepo.findByFirstName(name)
                     .stream()
                     .map(employeeMapper::toDto)
                     .collect(Collectors.toList());
@@ -97,7 +97,7 @@ public class EmployeeController {
     @GetMapping("/position/{position_name}")
     public ResponseEntity<?> getEmployeesByPosition(@PathVariable("position_name") String position) {
         try {
-            List<EmployeeDto> list = employeeRepo.findByPositionContainingIgnoreCase(position)
+            List<EmployeeDto> list = employeeRepo.findByPosition(position)
                     .stream()
                     .map(employeeMapper::toDto)
                     .collect(Collectors.toList());

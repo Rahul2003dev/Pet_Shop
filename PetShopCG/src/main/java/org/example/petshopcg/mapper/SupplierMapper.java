@@ -10,12 +10,22 @@ public class SupplierMapper {
     public SupplierDto toDto(Supplier supplier) {
         if (supplier == null) return null;
 
+        String city = null;
+        String state = null;
+
+        if (supplier.getAddress() != null) {
+            city = supplier.getAddress().getCity();
+            state = supplier.getAddress().getState();
+        }
+
         return new SupplierDto(
                 supplier.getId(),
                 supplier.getName(),
                 supplier.getContactPerson(),
                 supplier.getPhoneNumber(),
-                supplier.getEmail()
+                supplier.getEmail(),
+                city,
+                state
         );
     }
 
@@ -28,6 +38,8 @@ public class SupplierMapper {
         supplier.setContactPerson(dto.getContactPerson());
         supplier.setPhoneNumber(dto.getPhoneNumber());
         supplier.setEmail(dto.getEmail());
+
+        // Skipping address setting — use a service/repository if address needs to be resolved by city/state
         return supplier;
     }
 }

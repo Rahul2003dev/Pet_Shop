@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 /**
  * DTO for {@link PetFood}
  */
-@Data // ✅ Generates getters, setters, equals, hashCode, toString
+@Data
 public class PetFoodDto implements Serializable {
 
     private Integer id;
@@ -30,7 +30,7 @@ public class PetFoodDto implements Serializable {
 
     private BigDecimal price;
 
-    // ✅ Default constructor (Jackson needs this)
+
     public PetFoodDto() {
     }
 

@@ -46,7 +46,7 @@ public class PetFoodController {
     // GET by name (search)
     @GetMapping("/search")
     public ResponseEntity<?> searchByName(@RequestParam("name") String name) {
-        List<PetFood> foods = petFoodRepo.findByNameContainingIgnoreCase(name);
+        List<PetFood> foods = petFoodRepo.findByNameIgnoreCase(name);
         if (foods.isEmpty()) {
             return validationFailedResponse();
         }

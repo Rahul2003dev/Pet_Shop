@@ -9,16 +9,12 @@ import java.util.List;
 @Repository
 public interface SupplierRepo extends JpaRepository<Supplier, Integer> {
 
-    // Optional custom query methods
-
-    // Find supplier by name
-
+    // Find suppliers by name ignoring case
     List<Supplier> findByNameIgnoreCase(String name);
 
+    // Find suppliers where address.city matches ignoring case
+    List<Supplier> findByAddressCityIgnoreCase(String city);
 
-    // Find suppliers by contact person
-    List<Supplier> findByContactPerson(String contactPerson);
-
-    // Find suppliers by email
-    List<Supplier> findByEmail(String email);
+    // Find suppliers where address.state matches ignoring case
+    List<Supplier> findByAddressStateIgnoreCase(String state);
 }

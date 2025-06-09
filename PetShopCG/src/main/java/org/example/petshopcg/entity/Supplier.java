@@ -31,7 +31,7 @@ public class Supplier {
     private String email;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "address_id")
+    @JoinColumn(name = "address_id", referencedColumnName = "address_id")
     private Address address;
 
 }
