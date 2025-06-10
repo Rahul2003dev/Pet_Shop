@@ -83,7 +83,7 @@ public class SupplierController {
     // GET suppliers by city
     @GetMapping("/city/{city_name}")
     public ResponseEntity<?> getSuppliersByCity(@PathVariable("city_name") String city) {
-        List<Supplier> suppliers = supplierRepo.findByAddressCityIgnoreCase(city);
+        List<Supplier> suppliers = supplierRepo.findSuppliersByCityIgnoreCase(city);
         if (suppliers.isEmpty()) {
             return validationFailedResponse();
         }
