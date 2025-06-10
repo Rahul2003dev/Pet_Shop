@@ -44,7 +44,10 @@ public class AddressController {
         }
     }
 
-
+    @GetMapping("/test")
+    public  String testing(){
+        return "test";
+    }
     @GetMapping("/{address_id}")
     public ResponseEntity<?> getAddressById(@PathVariable("address_id") Integer id) {
         try {
