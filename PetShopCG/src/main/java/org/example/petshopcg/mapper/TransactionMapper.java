@@ -36,7 +36,7 @@ public class TransactionMapper {
         transaction.setAmount(transactionDto.getAmount());
         transaction.setTransactionStatus(transactionDto.getTransactionStatus());
 
-        // Set Customer (only with ID)
+
         if (transactionDto.getCustomerId() != null) {
             Customer customer = new Customer();
             customer.setId(transactionDto.getCustomerId());
@@ -45,7 +45,6 @@ public class TransactionMapper {
             transaction.setCustomer(null);
         }
 
-        // Set Pet (only with ID)
         if (transactionDto.getPetId() != null) {
             Pet pet = new Pet();
             pet.setId(transactionDto.getPetId());
