@@ -1,6 +1,9 @@
 package org.example.petshopcg.dto;
 
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 import org.example.petshopcg.entity.Address;
 
@@ -9,7 +12,10 @@ import java.io.Serializable;
 /**
  * DTO for {@link Address}
  */
-@Value
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AddressDto implements Serializable {
     Integer id;
     @Size(max = 255)

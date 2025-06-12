@@ -1,12 +1,14 @@
 package org.example.petshopcg.dto;
 
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 import lombok.Value;
 import org.example.petshopcg.entity.Customer;
 
 import java.io.Serializable;
 
 @Value
+@Data
 public class CustomerDto implements Serializable {
     Integer id;
     @Size(max = 255)
